@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--日志级别以及优先级排序: OFF > FATAL > ERROR > WARN > INFO > DEBUG > TRACE > ALL -->
+<!--Configuration后面的status，这个用于设置log4j2自身内部的信息输出，可以不设置，当设置成trace时，你会看到log4j2内部各种详细输出 -->
+<!--monitorInterval：Log4j能够自动检测修改配置 文件和重新配置本身，设置间隔秒数 -->
+<configuration status="WARN" monitorInterval="5">
+    <properties>  
+        <property name="LOG_HOME">D://springboot_log/logs</property>
+        <property name="SERVER_NAME">massif-data-web</property>
+    </properties>
+	<!--先定义所有的appender -->
+	<appenders>
+		<!--这个输出控制台的配置 -->
+		<console name="Console" target="SYSTEM_OUT">
+			<!--转换符说明 -->
+            <!--  
+                %d/date{yyyy-MM-dd HH:mm:ss, SSS} : 日志生成时间  
+                %p/level : 输出日志级别
+                %c/logger{length} : 输出日志的全限定名  
+                %m/msg/message : 日志内容，即 logger.info("message")  
+                %n : 换行符  
+                %C/class{length} : 输出执行记录请求的调用者的全限定名,尽量避免使用 
+                %L/line : 日志输出所在行数  
+                %M/method : 日志输出所在方法名
+                %t/thread ： 	输出产生日志的线程名
+                %l ： 输出日志事件的发生位置，相当于%c.%M(%F:%L)的组合，包括类全名、方法、文件名以及在代码中的行数。例如：test.TestLog4j.main(TestLog4j.java:10)。
+                %x ：输出和当前线程相关联的NDC(嵌套诊断环境)，尤其用到像java servlets这样的多客户多线程的应用中。
+                %F ：输出日志消息产生时所在的文件名称
+                %r ：输出自应用程序启动到输出该log信息耗费的毫秒数
+                -/. ： 格式修饰符，位于%和转换符之间，例：%-5level：输出级别，左对齐显示5个字符宽度,不够右补空格
+             -->
+			<Filters>
+				<!-- 本地和测试配置成DEBUG，生产控制台只输出ERROR及以上级别的信息（onMatch），其他的直接拒绝（onMismatch） -->
+                <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY" />  
+            </Filters>
+            <PatternLayout pattern="[${SERVER_NAME}] [%d{yyyy-MM-dd HH:mm:ss:SSS}] [%level] - %c(%L) - %msg%xEx%n" />
+		</console>
+		<!--文件会打印出所有信息，这个log每次运行程序会自动清空，由append属性决定，适合临时测试用 -->
+		<File name="log" fileName="${LOG_HOME}${SERVER_NAME}/test.log" append="false">
+			<PatternLayout pattern="[${SERVER_NAME}] [%d{yyyy-MM-dd HH:mm:ss:SSS}] [%level] - %c(%L) - %msg%xEx%n"  />
+		</File>
+		<!-- 这个会打印出所有的DEBUG级别及以上，ERROR级别以下的信息，日志文件以大小和小时进行切分，每次大小超过size或时间跨入下一个小时，则这个日志文件会自动存入按“年份/年份-月份/年份-月份-日”建立的文件夹下面 -->
+		<RollingRandomAccessFile name="RollingFileInfo" fileName="${LOG_HOME}${SERVER_NAME}/${SERVER_NAME}-debug.log"
+			filePattern="${LOG_HOME}${SERVER_NAME}/%d{yyyy}/%d{yyyy-MM}/%d{yyyy-MM-dd}/${SERVER_NAME}-%d{yyyy-MM-dd-HH}-debug-%i.log">
+			<Filters>
+				<!-- onMatch="ACCEPT" 表示匹配该级别及以上；
+					 onMatch="DENY" 表示不匹配该级别及以上；
+					 onMatch="NEUTRAL" 表示该级别及以上的，由下一个filter处理，如果当前是最后一个，则表示匹配该级别及以上；
+					 onMismatch="ACCEPT" 表示匹配该级别以下；
+					 onMismatch="NEUTRAL" 表示该级别及以下的，由下一个filter处理，如果当前是最后一个，则匹配该级别以下的；
+					 onMismatch="DENY" 表示不匹配该级别以下的。
+					-->
+                <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL" />  
+                <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY" />  
+            </Filters>
+			<PatternLayout pattern="[${SERVER_NAME}]  [%d{yyyy-MM-dd HH:mm:ss:SSS}] [%p] - %c(%L) - %m%n" />
+			<Policies>
+				<!-- 基于时间的触发策略。该策略主要是完成周期性的log文件封存工作。有两个参数-->
+				<!-- interval，integer型，指定两次封存动作之间的时间间隔。单位:以日志的命名精度来确定单位。-->
+				<!-- modulate，boolean型，说明是否对封存时间进行调制。若modulate=true，则封存时间将以0点为边界进行偏移计算。-->
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="100 MB" />
+			</Policies>
+			<!-- DefaultRolloverStrategy属性如不设置，则默认7指的是上面i的最大值，超过了就会覆盖之前的，这里设置了20 -->
+            <DefaultRolloverStrategy max="20"/>
+		</RollingRandomAccessFile>
+		<!-- 这个会打印出所有的ERROR及以上级别的信息，日志文件以大小和小时进行切分，每次大小超过size或时间跨入下一个小时，则这个日志文件会自动存入按“年份/年份-月份/年份-月份-日”建立的文件夹下面 -->
+		<RollingRandomAccessFile name="RollingFileError" fileName="${LOG_HOME}${SERVER_NAME}/${SERVER_NAME}-error.log"
+			filePattern="${LOG_HOME}${SERVER_NAME}/%d{yyyy}/%d{yyyy-MM}/%d{yyyy-MM-dd}/${SERVER_NAME}-%d{yyyy-MM-dd-HH}-error-%i.log">
+			<Filters>
+				<!--只输出ERROR及以上级别的信息（onMatch），ERROR以下直接拒绝（onMismatch） -->
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY" />  
+            </Filters>
+			<PatternLayout pattern="[${SERVER_NAME}]  [%d{yyyy-MM-dd HH:mm:ss:SSS}] [%p] - %c(%L) - %m%n" />
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="10 MB" />
+			</Policies>
+			<!-- DefaultRolloverStrategy属性如不设置，则默认7指的是上面i的最大值，超过了就会覆盖之前的，这里设置了20 -->
+            <DefaultRolloverStrategy max="20"/>
+		</RollingRandomAccessFile>
+	</appenders>
+	<!--然后定义logger，只有定义了logger并引入的appender，appender才会生效 -->
+	<loggers>
+		<!--过滤掉一些无用的日志信息 -->
+		<logger name="org.springframework" level="ERROR"></logger>
+		<logger name="org.apache.zookeeper" level="ERROR"></logger>
+		<logger name="com.netflix" level="ERROR"></logger>
+		<logger name="com.alibaba.dubbo" level="ERROR"></logger>
+		<logger name="org.mybatis" level="ERROR"></logger>
+		<logger name="com.bs.ztyq" level="DEBUG"></logger>
+		<logger name="org.apache.http" level="ERROR"></logger>
+		<asyncRoot level="all" includeLocation="true">
+			<appender-ref ref="Console" />
+			<appender-ref ref="RollingFileInfo" />
+			<appender-ref ref="RollingFileError" />
+			<!-- <appender-ref ref="log" /> -->
+		</asyncRoot>
+	</loggers>
+</configuration>

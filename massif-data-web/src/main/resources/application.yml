@@ -1,0 +1,42 @@
+server:
+  port: 8005
+spring:
+  application:
+    name: massif-data-web
+  freemarker:
+    cache: false
+    request-context-attribute: request
+    template-loader-path: classpath:/templates/ #模板加载路径 按需配置
+    content-type: text/html; charset=utf-8
+  mvc:
+    static-path-pattern: /static/**
+        
+eureka:
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka
+ribbon:
+  ReadTimeout: 12000
+  ConnectTimeout: 3000
+  eureka:
+    enabled: true
+logging: 
+  config: classpath:log4j2.xml
+#开启hystrix熔断机制
+feign: 
+  hystrix:
+    command:
+      default:
+        execution:
+          timeout:
+            enabled: true
+          isolation:  
+            thread:
+              timeoutInMilliseconds: 18000
+
+web:
+  application:
+    name: massif-data-web
+service:
+  application:
+    name: massif-data-service
